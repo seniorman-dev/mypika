@@ -1,0 +1,179 @@
+#check if django is installed on your machine
+python -m django --version
+
+
+#
+python manage.py showmigrations pika
+
+#create directory of choice (cd)
+mkdir djangotutorial
+
+#create django project
+django-admin startproject mysite djangotutorial
+
+#create own virtual environment (folder that holds your dependencies)
+python -m venv .venv
+
+#create django app (you can create as many depending on your project scope)
+python manage.py startapp <app_name>
+
+#activate virtual environment in command prompt terminal of your root project (install your django dependencies here)
+.venv\Scripts\activate
+
+#run server
+python manage.py runserver
+
+#stage changes for database migrations
+python manage.py makemigrations
+python manage.py makemigrations <app_name>
+
+#apply migrations to database
+python manage.py migrate
+
+
+
+Meta attributes for Djangor Rest Framework Serializer Classess
+
+| Attribute          | Description                                                                                      |
+| ------------------ | ------------------------------------------------------------------------------------------------ |
+| `model`            | The Django model class the serializer is based on (required for `ModelSerializer`).              |
+| `fields`           | A list/tuple of field names to include, or `'__all__'` to include all model fields.              |
+| `exclude`          | A list/tuple of field names to exclude (cannot be used with `fields`).                           |
+| `read_only_fields` | A list of fields that should be read-only.                                                       |
+| `extra_kwargs`     | A dictionary of extra settings for specific fields (e.g., `{'password': {'write_only': True}}`). |
+| `depth`            | Controls how deep nested relationships are serialized (e.g., `depth = 1`).                       |
+
+
+
+
+
+Meta attributes for Django Model Classess
+
+| Attribute              | Description                                                                                                              |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `ordering`             | Default ordering for querysets, e.g. `['-created_at']`.                                                                  |
+| `verbose_name`         | Human-readable singular name of the model, e.g. `"Transaction"`.                                                         |
+| `verbose_name_plural`  | Plural name for the model, e.g. `"Transactions"`.                                                                        |
+| `db_table`             | Custom database table name to use instead of the default (`app_model`).                                                  |
+| `unique_together`      | Sets a compound unique constraint across multiple fields. *(Deprecated in favor of `UniqueConstraint` in `constraints`)* |
+| `permissions`          | Custom permissions to be created with the model, e.g. `[("can_approve", "Can approve item")]`.                           |
+| `default_related_name` | Default name for reverse relationships (e.g. `user.posts` instead of `user.post_set`).                                   |
+| `indexes`              | List of custom indexes to apply on the table.                                                                            |
+| `constraints`          | List of model-level database constraints like `UniqueConstraint`, `CheckConstraint`, etc.                                |
+
+
+//  python manage.py makemigrations
+//  python manage.py migrate
+//  python manage.py runserver
+
+
+
+//  RESTFRAMEWORK GENERICS
+| **Generic View**               | **HTTP Methods**                | **Purpose**                              |
+| ------------------------------ | ------------------------------- | ---------------------------------------- |
+| 'GenericAPIView'               | 'GET', 'POST', 'PUT', 'PATCH', 'DELETE' |    Supports all http methods     |
+| `ListAPIView`                  | `GET`                           | List all instances                       |
+| `CreateAPIView`                | `POST`                          | Create a new instance                    |
+| `RetrieveAPIView`              | `GET`                           | Retrieve a single instance               |
+| `UpdateAPIView`                | `PUT`, `PATCH`                  | Update an instance                       |
+| `DestroyAPIView`               | `DELETE`                        | Delete an instance                       |
+| `ListCreateAPIView`            | `GET`, `POST`                   | List all and create a new instance       |
+| `RetrieveUpdateAPIView`        | `GET`, `PUT`, `PATCH`           | Retrieve and update an instance          |
+| `RetrieveDestroyAPIView`       | `GET`, `DELETE`                 | Retrieve and delete an instance          |
+| `RetrieveUpdateDestroyAPIView` | `GET`, `PUT`, `PATCH`, `DELETE` | Retrieve, update, and delete an instance |
+
+
+
+//  FOR DRF VIEWS
+| **Method to Override**             | **Purpose**                              |
+| ---------------------------------- | ---------------------------------------- |
+| `get_queryset(self)`               | Customize the queryset dynamically       |
+  "get_object()"
+| `get_serializer_class(self)`       | Use different serializers based on logic |
+| `perform_create(self, serializer)` | Custom logic when saving a new object    |
+| `perform_update(self, serializer)` | Custom logic when updating an object     |
+| `perform_destroy(self, instance)`  | Custom logic when deleting an object     |
+| 'get, post, put, patch, delete'  | availability depends on the generic api views you are extending in your view |
+def post(self, request: Request) -> Response:
+
+
+
+
+//  SERIALIZERS
+| **Method to Override**             | **Purpose**                              |
+| ---------------------------------- | ---------------------------------------- |
+| `validate(self, data: dict)`         | Used to validate the general data of the serializer       |
+| `validate_<field-name>(self, value: Any)` | Used to run validations on a specific field |
+| `save(self, **kwargs)`               | Custom override for saving the serialized data |
+| `update(self, instance, validated_data: dict)`               | Custom override for updating an instance |
+| `create(self, validated_data: dict)`               | Custom override for creating an object |
+
+
+
+
+# INSTALL
+pip install redis
+pip install "celery[redis]"
+
+#If Redis:
+#Install: choco install redis-64 (on Windows with Chocolatey)
+
+#Start Redis server in the directory: 
+C:\Program Files\Memurai>memurai.exe
+
+
+#RUN THIS CELERY WORKER IN YOUR ROOT DJANGO PROJECT DIRECTORY WHILE REDIS BROKER IS RUNNING IN CMD AS WELL
+celery -A levi worker -l info  //for async task
+
+celery -A levi beat -l info  //for periodic task
+
+
+
+#That will generate a requirements.txt with everything you’ve installed (Django, djangorestframework, etc).
+pip freeze > requirements.txt
+
+#TO RUN DJANGO ASGI app (SOLID FOR HTTP + WEBSOCKET CONNECTIONS)
+>> uvicorn levi.asgi:application --reload
+note: instead of using gunicorn to deploy to render, use uvicorn as it supports both http rest apis and websockets.
+(uvicorn levi.asgi:application --host 0.0.0.0 --port $PORT
+)
+
+#asap git commands
+git add requirements.txt
+git commit -m "Added socketio and uvicorn dependencies"
+git push
+
+
+
+#websockets
+| Step | Direction       | Action                          | Event                                |
+| ---- | --------------- | ------------------------------- | ------------------------------------ |
+| 1    | Client → Server | User emits `"get_chat_history"` | `socket.emit('get_chat_history')`    |
+| 2    | Server          | Authenticates user              | via `Authorization` header           |
+| 3    | Server          | Gathers all active chats        | from `Message` + `User` tables       |
+| 4    | Server → Client | Emits chat list                 | `socket.emit('chat_history', {...})` |
+| 5    | Client          | Receives and displays chat list | update chat UI                       |
+
+
+//Flutter Client
+when the user opens the chat screen with a specific person,
+you emit:
+
+socket.emit("mark_as_read", {
+  "sender_id": otherUserId,
+  "receiver_id": currentUserId,
+});
+
+
+
+
+
+///WHAT DRF VIEWSETS GENERATES FOR YOU IDEALISTICALLY
+| Method Name        | HTTP Verb | Example URL       | Action                     |
+| ------------------ | --------- | ----------------- | -------------------------- |
+| `list()`           | `GET`     | `/products/`      | Get all products           |
+| `retrieve()`       | `GET`     | `/products/{id}/` | Get one product            |
+| `create()`         | `POST`    | `/products/`      | Create a new product       |
+| `update()`         | `PUT`     | `/products/{id}/` | Update a product fully     |
+| `partial_update()` | `PATCH`   | `/products/{id}/` | Update a product partially |
+| `destroy()`        | `DELETE`  | `/products/{id}/` | Delete a product           |
