@@ -1758,6 +1758,25 @@ class ProductViewSet(viewsets.ModelViewSet):
         )
 
 
+    #  Retrieve Products BY type 
+    @action(detail=False, methods=['get'])
+    def get_product_by_type(self, request: Request, *args, **kwargs):
+        type: str = request.query_params.get("type")
+
+        # Convert string to boolean safely
+        if type is not None:
+            products = Product.objects.filter(type=type)
+        else:
+            products = Product.objects.all()
+
+        serializer = self.get_serializer(products, many=True)
+
+        return Response(
+            {"success": True, "message": f"Products with type {type} retrieved successfully", "data": serializer.data},
+            status=status.HTTP_200_OK
+        )
+
+
 
     # Custom DELETE endpoint — delete all products
     @action(detail=False, methods=['delete'])
