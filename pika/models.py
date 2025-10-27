@@ -743,7 +743,7 @@ class ShipmentOrder(models.Model):
 class Notification(models.Model):
     """Notifications for users"""
     id = models.UUIDField(auto_created=True, primary_key=True, default=uuid.uuid4, editable=False, unique=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_notification')
     title = models.CharField(max_length=150)
     type = models.CharField(max_length=100)
     content = models.TextField()
@@ -805,3 +805,35 @@ class AdminChats(models.Model):
     class Meta:
         ordering = ['-created_at'] 
         
+        
+#GIFTCARD MODEL (REDEEM GIFTCARD)
+class GiftCard(models.Model):
+    STATUS_CHOICES = [
+        ('unused', 'Unused'),
+        ('redeemed', 'Redeemed'),
+        ('expired', 'Expired'),
+        ('invalid', 'Invalid'),
+        ('valid', 'Valid'),
+    ]
+    #initials
+    id = models.UUIDField(auto_created=True, primary_key=True, default=uuid.uuid4, editable=False, unique=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_giftcard')
+    code = models.CharField(max_length=256, unique=True)
+    brand = models.CharField(max_length=50,)
+    country = models.CharField(max_length=50,)
+    card_type = models.CharField(max_length=150,) #"E-code" | "Physical",
+    upload_image = models.JSONField(default=list,blank=True)
+    
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    currency = models.CharField(max_length=5, default='USD')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='unused') #used, expired, invalid, valid
+    
+    #last updtaes
+    redeemed_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    redeemed_at = models.DateTimeField(null=True, blank=True)
+    metadata = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.code} ({self.status})"

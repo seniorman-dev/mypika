@@ -3,7 +3,7 @@ from rest_framework import serializers
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import update_last_login
 from rest_framework.authtoken.models import Token
-from .models import CartOrder, CryptoWallet, GadgetOrder, Notification, Product, ShipmentOrder, User, BankDetail, Wallet, Transaction, Message
+from .models import CartOrder, CryptoWallet, GadgetOrder, GiftCard, Notification, Product, ShipmentOrder, User, BankDetail, Wallet, Transaction, Message
 
 
 
@@ -672,3 +672,21 @@ class ShipmentOrderSerializer(serializers.ModelSerializer):
         model = ShipmentOrder
         fields = "__all__"
         
+        
+
+#GIFTCARD REDEMPTION SERIALIZER
+class RedeemGiftCardSerializer(serializers.ModelSerializer):
+    code = serializers.CharField()
+    amount = serializers.DecimalField(max_digits=10, decimal_places=2,)
+    currency = serializers.CharField()  #"USD",
+    brand = serializers.CharField()
+    card_type = serializers.CharField() #"E-code" | "Physical",
+    country = serializers.CharField()  #"US"
+    upload_image = serializers.ListField(
+        child=serializers.CharField()  #list or array of images
+    )
+    
+    class Meta:
+        model = GiftCard
+        fields = "__all__"
+    

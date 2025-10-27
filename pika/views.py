@@ -1,6 +1,9 @@
 from datetime import timedelta, timezone
+import os
 import random
 from django.shortcuts import render
+from django.db import transaction
+
 import requests
 from rest_framework import viewsets, status, permissions, generics
 from rest_framework.response import Response
@@ -9,7 +12,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 from pika.pagination_cofig import SmallResultsSetPagination
-from .models import BankDetail, CartOrder, CryptoWallet, GadgetOrder, Notification, Product, ShipmentOrder, Transaction, Wallet, Message
+from .models import BankDetail, CartOrder, CryptoWallet, GadgetOrder, GiftCard, Notification, Product, ShipmentOrder, Transaction, Wallet, Message
 from .serializers import (
     BankTransferSerializer,
     CartOrderSerializer,
@@ -22,6 +25,7 @@ from .serializers import (
     PanicPinSerializer,
     ProductSerializer,
     RecipientCodeSerializer,
+    RedeemGiftCardSerializer,
     ReportTransactionSerializer,
     ShipmentOrderSerializer,
     TransactionSerializer,
@@ -34,14 +38,17 @@ from .serializers import (
     KycUpdateSerializer,
     WalletSerializer
 )
+
+
+import hmac, hashlib, json
 from django.contrib.auth import logout, get_user_model
 from django.core.mail import send_mail
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.core.cache import cache
 from rest_framework_simplejwt.tokens import RefreshToken, OutstandingToken, BlacklistedToken
-from .tasks import delete_user_in_5_days
-
+from .tasks import delete_user_in_5_days, send_email_to_user
+from .giftcards import GiftCardProviderService
 
 
 
@@ -1067,7 +1074,7 @@ class DepositView(generics.GenericAPIView):
             #date time of the trx
             trx_ref = f"PIKA-{timedelta.microseconds}-{random.randint(1000, 9999)}"
 
-            # Create a transaction record  for sender
+            # Create a transaction record  for sender  
             transaction =  Transaction.objects.create(
                 user=request.user,
                 transaction_reference=trx_ref,
@@ -1693,7 +1700,7 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     # Optionally: Add custom permission (only admin can manage)
     permission_classes = [permissions.AllowAny]
-    #pagination_class = SmallResultsSetPagination  # 👈 use custom pagination here
+    #pagination_class = SmallResultsSetPagination  custom pagination
     
     
     def handle_serializer_errors(self, serializer=None, success_message=None, success_status=status.HTTP_200_OK):
@@ -1738,7 +1745,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         )
         
     
-    #  Retrieve Products BY type rather than ID
+    #  Retrieve Products BY type "sweet-deals" rather than ID
     @action(detail=False, methods=['get'])
     def retrieve_product_by_type(self, request: Request, *args, **kwargs):
         is_sweet_deal_param = request.query_params.get("is_sweet_deal")
@@ -1758,7 +1765,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         )
 
 
-    #  Retrieve Products BY type 
+    #  Retrieve Products BY type = phone, tablet, laptop
     @action(detail=False, methods=['get'])
     def get_product_by_type(self, request: Request, *args, **kwargs):
         type: str = request.query_params.get("type")
@@ -1835,3 +1842,188 @@ class ProductViewSet(viewsets.ModelViewSet):
             {"message": "Product deleted successfully"},
             status=status.HTTP_204_NO_CONTENT
         )
+        
+        
+
+
+
+class GiftCardProcessorView(generics.GenericAPIView):
+    
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request: Request) -> Response:
+        
+        serializer = RedeemGiftCardSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        code = serializer.validated_data.get("code")
+        amount = serializer.validated_data.get("amount")
+        currency = serializer.validated_data.get("currency")
+        brand = serializer.validated_data.get("brand")
+        card_type = serializer.validated_data.get("card_type")
+        country = serializer.validated_data.get("country")
+        upload_image = serializer.validated_data.get("upload_image")
+        
+        # assumes authentication
+        user = request.user 
+        
+        # Atomically handle gift card redemption to prevent race conditions
+        with transaction.atomic():
+            #create giftcard object in database or fetch it if it already exists for the user
+            giftcard = GiftCard.objects.get_or_create(
+                user=user, 
+                code=code,
+                currency=currency,
+                amount=amount,
+                brand=brand,
+                card_type=card_type,
+                country=country,
+                upload_image=upload_image
+            )
+
+            # External verification (simulate provider)
+            provider_response = GiftCardProviderService.verify_card(code=code)
+            if not provider_response.get("valid", False):
+                giftcard.status = "invalid"
+                '''giftcard.metadata.update({
+                    "provider_ref": provider_response['provider_ref'],
+                    "remarks": provider_response['remarks'],
+                })'''
+                giftcard.save()
+                return Response(
+                    {"error": "Gift card invalid or unrecognized."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            giftcard.status = "valid"
+            giftcard.metadata.update({
+                "provider_ref": provider_response['provider_ref'],
+                "remarks": provider_response['remarks'],
+            })
+            giftcard.save()
+            return Response(
+                {
+                    "message": "Gift card recognized by provider and is valid.",
+                    "provider_response": provider_response
+                },
+                status=status.HTTP_200_OK
+            )
+            
+
+
+class GiftCardVerificationWebhook(generics.GenericAPIView):
+    
+    """
+    Handles webhook callbacks from partner verification systems.
+    Example POST payload:
+    {
+        "reference": "GC-20251026-0001",
+        "status": "success",
+        "verified_amount": 100,
+        "verified_currency": "USD",
+        "brand": "amazon",
+        "remarks": "Valid gift card",
+        "provider_ref": "ABC123456"
+    }
+    """
+    
+    """
+    Redeem a gift card, verify with provider, credit wallet, log transaction.
+    """
+    
+    # Webhooks usually use HMAC auth, not DRF auth
+    authentication_classes = [] 
+    permission_classes = []   
+    
+    
+    def verify_signature(self, request: Request):
+        """Optional: Validate webhook signature (recommended)."""
+        secret: str = os.getenv("WEBHOOK_SECRET", "none")
+        if not secret:
+            return True
+        signature = request.headers.get("X-Signature", "")
+        computed = hmac.new(secret.encode(), request.body, hashlib.sha256).hexdigest()
+        return hmac.compare_digest(signature, computed)
+    
+        
+    def post(self, request: Request) -> Response:
+        if not self.verify_signature(request):
+            return Response({"detail": "Invalid signature"}, status=status.HTTP_403_FORBIDDEN)
+
+        data = request.data
+        print(f'webhook data {data}')
+        ref = data.get("reference")  #should be same as the giftcard object id
+        status_str = data.get("status")
+        verified_amount = data.get("verified_amount")
+        verified_currency = data.get("verified_currency", "USD")
+        brand = data.get("brand")
+        remarks = data.get("remarks", "")
+        provider_ref = data.get("provider_ref")
+
+        try:
+            giftcard = GiftCard.objects.select_related("redeemed_by").get(metadata__provider_ref=provider_ref)     #metadata__reference=ref
+        except GiftCard.DoesNotExist:
+            return Response({"detail": "GiftCard not found for this corresponding user"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Already processed?
+        if giftcard.status == "redeemed":
+            return Response({"detail": "Already processed"}, status=status.HTTP_200_OK)
+
+        # Update according to webhook data
+        with transaction.atomic():
+            if status_str == "success":
+                user = giftcard.redeemed_by
+                rate = GiftCardProviderService.get_rate_for_brand(bran=brand, from_currency=verified_currency, to_currency="NGN") or 1
+                payout = float(verified_amount) * float(rate)
+                
+                #Credit wallet
+                wallet = Wallet.objects.get(user=user)
+                wallet.deposit(amount=payout)
+                
+                # ✅ Mark as redeemed
+                giftcard.amount = verified_amount
+                giftcard.currency = verified_currency
+                giftcard.redeemed_at = timezone.now()
+                giftcard.redeemed_by = user
+                giftcard.metadata.update({
+                    "provider_ref": provider_ref,
+                    "remarks": remarks,
+                })
+                giftcard.save()
+
+                #Log transaction # Create a transaction record  for user
+                trx_ref = f"PIKA-{timedelta.microseconds}-{random.randint(1000, 9999)}"
+                transaction =  Transaction.objects.create(
+                    user=user,
+                    transaction_reference=trx_ref,
+                    transaction_type="GIFTCARD-REDEEM",
+                    amount=payout,
+                    #currency="NGN",
+                    status="COMPLETED",
+                    reason="I want to use the funds to guide!",
+                    crypto_name="",
+                    crypto_wallet_address="",
+                    recipient=user,
+                )
+            
+                #CREATE NOTIFICATION AFTER SUCCESSFUL TRANASACTION Redemption
+                Notification.objects.create(
+                    user=user,
+                    title=f"Transaction Successful!",
+                    content=f"Hi {user.first_name},\n Your giftcard has been redeemed successfully!",
+                    type="normal"  #alert, normal, promotion
+                )
+
+                # (Optional) Trigger async email confirmation
+                send_email_to_user.delay(user_id=user.id, content='Your giftcard has been redeemed successfully and your wallet credited!')
+
+                return Response({"status": "processed", "credited": payout}, status=status.HTTP_200_OK)
+
+            else:
+                giftcard.status = "rejected"
+                giftcard.metadata.update({
+                    "provider_ref": provider_ref,
+                    "remarks": remarks,
+                })
+                giftcard.save()
+                return Response({"status": "rejected"}, status=status.HTTP_200_OK)
+    

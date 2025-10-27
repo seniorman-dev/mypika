@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 # CREATE A SIMPLE CELERY TASK (PERIODIC OR CRON JOB)
 @shared_task
-def delete_user_in_5_days(user_id: int):
+def delete_user_in_5_days(user_id: str):
     try:
         user = User.objects.select_related().get(id=user_id, is_deleted=True)  #"select_related()" optimizes the query
         if timezone.now() >= user.deleted_at + timedelta(days=5):
@@ -34,6 +34,23 @@ def delete_user_in_5_days(user_id: int):
             )
             user.delete()
             logger.info(f"Deleted user {user.email} and related data.")
+
+    except User.DoesNotExist:
+        pass
+
+
+@shared_task
+def send_email_to_user(user_id: str, content: str):
+    try:
+        user = User.objects.select_related().get(id=user_id,)  #"select_related()" optimizes the query
+        # Send the email
+        send_mail(
+            subject=f"Hello, {user.get_short_name()}.", 
+            message=content,
+            from_email="noreply@pika.com", 
+            recipient_list=[f'{user.email}']
+        )
+        logger.info(f"Sent async task email to {user.email}. Thanks to celery!")
 
     except User.DoesNotExist:
         pass

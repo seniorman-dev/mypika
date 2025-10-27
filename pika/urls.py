@@ -68,6 +68,10 @@ urlpatterns = [
     path('api/transactions/', views.TransactionListView.as_view(), name='transaction-list'),
     path('api/transactions/<str:pk>/', views.TransactionListView.as_view(), name='transaction-object'),
     
+    # Giftcard Transactions (Redemption and Sale) (POST REQUESTS)
+    path('api/giftcards/redeem/', views.GiftCardProcessorView.as_view(), name='redeem-giftcard'),
+    path('api/giftcards/redeem/webhook/', views.GiftCardVerificationWebhook.as_view(), name='redeem-giftcard-webhook'),
+    
     # Email Sending APIs
     path('api/send-email/', views.SendEmailView.as_view(), name='send-email'),
     
