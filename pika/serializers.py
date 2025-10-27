@@ -675,7 +675,7 @@ class ShipmentOrderSerializer(serializers.ModelSerializer):
         
 
 #GIFTCARD REDEMPTION SERIALIZER
-class RedeemGiftCardSerializer(serializers.ModelSerializer):
+'''class RedeemGiftCardSerializer(serializers.ModelSerializer):
     code = serializers.CharField()
     amount = serializers.DecimalField(max_digits=10, decimal_places=2,)
     currency = serializers.CharField()  #"USD",
@@ -688,5 +688,13 @@ class RedeemGiftCardSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = GiftCard
-        fields = "__all__"
-    
+        fields = "__all__"''' 
+        
+        
+class RedeemGiftCardSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GiftCard
+        fields = ["code", "amount", "currency", "brand", "card_type", "country", "upload_image"]
+        # Don't include user in required fields
+        extra_kwargs = {"user": {"read_only": True}}
+

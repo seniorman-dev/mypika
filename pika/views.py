@@ -1870,7 +1870,7 @@ class GiftCardProcessorView(generics.GenericAPIView):
         # Atomically handle gift card redemption to prevent race conditions
         with transaction.atomic():
             #create giftcard object in database or fetch it if it already exists for the user
-            giftcard = GiftCard.objects.get_or_create(
+            giftcard, created  = GiftCard.objects.get_or_create(
                 user=user, 
                 code=code,
                 currency=currency,
