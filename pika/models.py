@@ -358,7 +358,7 @@ class Wallet(models.Model):
         self.save()
     
     #WALLET Debit
-    def debi(self, amount: int):
+    def debit(self, amount: int):
         """Debit money from wallet to external source"""
         if amount <= 0:
             raise ValueError("Debit amount must be positive")
