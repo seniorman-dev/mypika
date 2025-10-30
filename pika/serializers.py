@@ -694,7 +694,14 @@ class ShipmentOrderSerializer(serializers.ModelSerializer):
 class RedeemGiftCardSerializer(serializers.ModelSerializer):
     class Meta:
         model = GiftCard
-        fields = ["code", "amount", "currency", "brand", "card_type", "country", "upload_image"]
+        fields = ["code", "amount", "currency", "brand", "card_type", "country", "upload_image", "callback_url"]
         # Don't include user in required fields
-        extra_kwargs = {"user": {"read_only": True}}
+        extra_kwargs = {"user": {"read_only": True}, "callback_url": {"write_only": True}}
+        
+class BuyGiftCardSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GiftCard
+        fields = ["amount", "currency", "brand", "card_type", "country", "callback_url"]
+        # Don't include user in required fields
+        extra_kwargs = {"user": {"read_only": True}, "callback_url": {"write_only": True}}
 

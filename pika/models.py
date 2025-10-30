@@ -356,6 +356,18 @@ class Wallet(models.Model):
         # Add balance and log transaction
         self.balance += amount
         self.save()
+    
+    #WALLET Debit
+    def debi(self, amount: int):
+        """Debit money from wallet to external source"""
+        if amount <= 0:
+            raise ValueError("Debit amount must be positive")
+        
+        if self.balance < amount:
+            raise ValueError("Insufficient funds")
+        # Add balance and log transaction
+        self.balance -= amount
+        self.save()
             
     
     
@@ -815,6 +827,8 @@ class GiftCard(models.Model):
         ('expired', 'Expired'),
         ('invalid', 'Invalid'),
         ('valid', 'Valid'),
+        ('success', 'Success'),
+        ('failed', 'Failed'),
     ]
     #initials
     id = models.UUIDField(auto_created=True, primary_key=True, default=uuid.uuid4, editable=False, unique=True)
@@ -838,3 +852,6 @@ class GiftCard(models.Model):
 
     def __str__(self):
         return f"{self.code} ({self.status})"
+    
+    
+    

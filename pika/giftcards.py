@@ -12,15 +12,15 @@ class GiftCardProviderService:
     
     
     """
-    Example service to verify gift card with an external provider.
+    Example service to verify gift card with an external provider then redeem.
     """
     @classmethod
-    def verify_card(cls, code: str) -> dict:
+    def verify_card(cls, code: str, callback_url: str) -> dict:
         try:
             response = requests.post(
                 f"{cls.BASE_URL}/verify",
                 headers={"Authorization": f"Bearer {cls.API_KEY}"},
-                json={"code": code},
+                json={"code": code, "callback_url": callback_url},
                 timeout=10
             )
 
@@ -30,6 +30,48 @@ class GiftCardProviderService:
             data = response.json()
             print(data)
             # e.g. {"valid": True, "amount": 100, "currency": "USD", "status": "unused"}
+            return data
+
+        except requests.RequestException as e:
+            return {"valid": False, "reason": str(e)}
+        
+        
+    
+    """
+    Example service to verify gift card with an external provider then purchase.
+    """
+    @classmethod
+    def verify_card_for_prurchase(
+        cls, 
+        brand: str, 
+        card_type: str,
+        country: str,
+        currency: str,
+        amount: str,
+        callback_url: str
+        ) -> dict:
+        try:
+            response = requests.post(
+                f"{cls.BASE_URL}/verify",
+                headers={"Authorization": f"Bearer {cls.API_KEY}"},
+                json={
+                    
+                    "brand": brand,
+                    "card_type": card_type,
+                    "country": country,
+                    "currency": currency,
+                    "amount": amount,
+                    "callback_url": callback_url
+                },
+                timeout=10
+            )
+
+            if response.status_code != 200:
+                return {"valid": False, "reason": "Provider error"}
+
+            data = response.json()
+            print(data)
+            # e.g. {"valid": True, "amount": 100, "currency": "USD",}
             return data
 
         except requests.RequestException as e:
