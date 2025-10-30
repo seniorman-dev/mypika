@@ -4,7 +4,7 @@ from django.utils import timezone
 from datetime import timedelta
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
-from .models import BankDetail, CryptoWallet, Notification, Wallet, Transaction
+from .models import BankDetail, CryptoWallet, Notification, Wallet, Transaction, Message, GadgetOrder, CartOrder, ShipmentOrder, GiftCard
 import logging
 
 
@@ -25,6 +25,12 @@ def delete_user_in_5_days(user_id: str):
             CryptoWallet.objects.filter(user=user).delete()
             Transaction.objects.filter(user=user).delete()
             Notification.objects.filter(user=user).delete()
+            Message.objects.filter(user=user).delete()
+            GadgetOrder.objects.filter(user=user).delete()
+            CartOrder.objects.filter(user=user).delete()
+            ShipmentOrder.objects.filter(user=user).delete()
+            GiftCard.objects.filter(user=user).delete()
+            User.objects.filter(user=user).delete()
             # Send the email
             send_mail(
                subject=f"Hello, {user.get_short_name()}.", 

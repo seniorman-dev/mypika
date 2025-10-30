@@ -2205,12 +2205,12 @@ class GiftCardPurchaseVerificationWebhook(generics.GenericAPIView):
                 Notification.objects.create(
                     user=user,
                     title=f"Transaction Successful!",
-                    content=f"Hi {user.first_name},\n Your {amount} {currency} giftcard has been purchased successfully and your code is {code}. \nKindly check your email for more information.!",
+                    content=f"Hi {user.first_name}, \nYour {amount} {currency} giftcard has been purchased successfully and your code is {code}. \nKindly check your email for more information.!",
                     type="normal"  #alert, normal, promotion
                 )
 
                 # (Optional) Trigger async email confirmation
-                send_email_to_user.delay(user_id=user.id, content=f"Hi {user.first_name},\n Your {amount} {currency} giftcard has been purchased successfully and your code is {code}.")
+                send_email_to_user.delay(user_id=user.id, content=f"You have successfully purchased {amount} {currency} giftcard and your code is {code}.")
 
                 return Response({"status": "processed", "debited": debit}, status=status.HTTP_200_OK)
 
