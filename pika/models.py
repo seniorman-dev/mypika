@@ -854,4 +854,5 @@ class GiftCard(models.Model):
         return f"{self.code} ({self.status})"
     
     
-    
+class LeadershipBoard(models.Model):
+    pass
