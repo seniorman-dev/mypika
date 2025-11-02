@@ -860,4 +860,5 @@ class GiftCard(models.Model):
     
     
 class LeadershipBoard(models.Model):
-    pass
+    id = models.UUIDField(auto_created=True, primary_key=True, default=uuid.uuid4, editable=False, unique=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_leadership_board')

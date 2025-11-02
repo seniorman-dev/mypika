@@ -256,7 +256,7 @@ class BankDetailSerializer(serializers.ModelSerializer):
             account_name=data.get('account_name'),
             bank_name=data.get('bank_name'),
             bank_code=data.get('bank_code'),
-            nuban=data.get('type')
+            type=data.get('type')
         )
         
         if bank_detail_object.exists():

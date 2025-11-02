@@ -433,7 +433,7 @@ class BankDetailViewSet(viewsets.ModelViewSet):
       - retrieve specific bank detail
       - delete all bank details at once (custom)
     """
-    #queryset = BankDetail.objects.all().order_by('-created_at')
+    queryset = BankDetail.objects.all().order_by('-created_at')
     serializer_class = BankDetailSerializer
 
     # Optionally: Add custom permission
@@ -564,6 +564,12 @@ class BankDetailViewSet(viewsets.ModelViewSet):
             {"message": f"Successfully deleted all ({count}) banks."},
             status=status.HTTP_204_NO_CONTENT
         )
+        
+    def get_view_name(self):
+        # This helps debug what view is being called
+        print(f"Action: {self.action}")
+        print(f"Allowed methods: {self.allowed_methods}")
+        return super().get_view_name()
         
         
         
