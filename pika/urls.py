@@ -6,6 +6,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from pika import views
 # Import your ViewSets
 from pika.views import (
+    BankDetailViewSet,
     CartOrderViewSet,
     CryptoWalletViewSet,
     FiatWalletViewSet,
@@ -20,7 +21,7 @@ from pika.views import (
 router = DefaultRouter()
 router.register(r'products', ProductViewSet, basename='products')
 router.register(r'users', UserViewSet, basename="users")
-router.register(r'banks', UserViewSet, basename="banks")
+router.register(r'banks', BankDetailViewSet, basename="banks")
 router.register(r'fiat-wallet', FiatWalletViewSet, basename="fiat-wallet")
 router.register(r'crypto-wallet', CryptoWalletViewSet, basename="crypto-wallet")
 router.register(r'gadget-orders', GadgetOrderViewSet, basename='gadget-orders')
@@ -70,6 +71,7 @@ urlpatterns = [
     
     # Giftcard Transactions (Redemption and Sale) (POST REQUESTS)
     path('api/giftcards/redeem/', views.GiftCardProcessorView.as_view(), name='redeem-giftcard'),
+    path('api/giftcard/purchase/', views.GiftCardBuyProcessorView.as_view(), name="buy-giftcard"),
     path('api/giftcards/redeem/webhook/', views.GiftCardVerificationWebhook.as_view(), name='redeem-giftcard-webhook'),
     path('api/giftcards/purchase/webhook/', views.GiftCardPurchaseVerificationWebhook.as_view(), name='purchase-giftcard-webhook'),
     

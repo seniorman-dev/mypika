@@ -422,7 +422,6 @@ class  UserViewSet(viewsets.ModelViewSet):
         )
         
 
-
 class BankDetailViewSet(viewsets.ModelViewSet):
     """
     An Authenticated ViewSet for managing bank details.
@@ -434,14 +433,14 @@ class BankDetailViewSet(viewsets.ModelViewSet):
       - retrieve specific bank detail
       - delete all bank details at once (custom)
     """
-    queryset = BankDetail.objects.all().order_by('-created_at')
+    #queryset = BankDetail.objects.all().order_by('-created_at')
     serializer_class = BankDetailSerializer
 
     # Optionally: Add custom permission
     permission_classes = [permissions.IsAuthenticated]
     #pagination_class = SmallResultsSetPagination  # 👈 use custom pagination here
     
-    def handle_serializer_errors(self, serializer=None, success_message=None, success_status=status.HTTP_200_OK):
+    '''def handle_serializer_errors(self, serializer=None, success_message=None, success_status=status.HTTP_200_OK):
         try:
             serializer.is_valid(raise_exception=True)
             serializer.save()
@@ -453,17 +452,22 @@ class BankDetailViewSet(viewsets.ModelViewSet):
             return Response(
                 {"success": False, "error": "Validation failed", "message": exc.detail},
                 status=status.HTTP_400_BAD_REQUEST
-            )
+            )'''
+            
+    def perform_create(self, serializer):
+        # Automatically attach the current logged-in user
+        serializer.save(user=self.request.user)
             
             
     # You can override create() if you want a custom response
     def create(self, request: Request, *args, **kwargs):
         print("Data:", request.data)
-        serializer = self.get_serializer(data=request.data)
+
         try:
+            serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             #inject the user field in the serializer
-            serializer.save(user=self.request.user)
+            #serializer.save(user=self.request.user)
             self.perform_create(serializer)
             return Response(
                 {
@@ -528,7 +532,8 @@ class BankDetailViewSet(viewsets.ModelViewSet):
           {"success": True, "message": "Bank retrieved successfully", "data": serializer.data},
           status=status.HTTP_200_OK
         )
-        
+
+          
     #  Update BANK BY ID
     def update(self, request: Request, *args, **kwargs):
         instance = self.get_object()
@@ -835,6 +840,9 @@ class CryptoWalletViewSet(viewsets.ModelViewSet):
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
+            
+            
+            
             
     #  UPDATE CRYPTO WALLET BY USER Auth RATHER THAN ID
     @action(detail=False, methods=['patch'])

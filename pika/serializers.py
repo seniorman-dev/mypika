@@ -238,10 +238,10 @@ class BankDetailSerializer(serializers.ModelSerializer):
             'currency',
             'type',
             'account_name',
-            'account_name',
+            'account_number',
             'bank_code',
             'recipient_code',
-            'is_primary',
+            'is_primary',  # Added missing field
             'created_at',
             'updated_at',
         )

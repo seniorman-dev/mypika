@@ -239,7 +239,7 @@ class Transaction(models.Model):
         ordering = ['-created_at'] 
     
     def __str__(self):
-        return f"{self.transaction_id} - {self.transaction_type} - {self.amount}{self.currency}"
+        return f"{self.id} - {self.transaction_type} - {self.amount}{self.reason}"
     
     def freeze(self, reason: str):
         """Freeze a transaction due to a report"""
@@ -282,16 +282,21 @@ class BankDetail(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     #HUMAN READABLE CONTEXT
-    def __str__(self):
-        return f"{self.bank_name} - {self.account_number} ({self.user.email})"
     
+    def __str__(self):
+       # user_email = getattr(self.user, "email", "No Email")
+        return f"{self.bank_name} - {self.account_number} "
+
+        
     class Meta:
-        #unique_together = ('user', 'account_number', 'account_name', 'bank_name', 'nuban')
-        models.UniqueConstraint(
-            fields=['user', 'account_number', 'account_name', 'bank_name', 'bank_code', 'type'],
-            name='unique_bank_detail_per_user'
-        )
-        ordering = ['-created_at'] 
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'account_number', 'account_name', 'bank_name', 'bank_code', 'type'],
+                name='unique_bank_detail_per_user'
+            ),
+        ]
+        ordering = ['-created_at']
+
         
         
 
