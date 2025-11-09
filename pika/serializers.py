@@ -3,7 +3,7 @@ from rest_framework import serializers
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import update_last_login
 from rest_framework.authtoken.models import Token
-from .models import CartOrder, CryptoWallet, GadgetOrder, GiftCard, Notification, Product, ShipmentOrder, User, BankDetail, Wallet, Transaction, Message
+from .models import CartOrder, CryptoWallet, GadgetOrder, GiftCard, LeadershipBoard, Notification, Product, ShipmentOrder, User, BankDetail, Wallet, Transaction, Message
 
 
 
@@ -705,3 +705,7 @@ class BuyGiftCardSerializer(serializers.ModelSerializer):
         # Don't include user in required fields
         extra_kwargs = {"user": {"read_only": True}, "callback_url": {"write_only": True}}
 
+class LeadershipBoardSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeadershipBoard
+        fields = ["id", "total_trades", "total_traded_amount", "currency"]

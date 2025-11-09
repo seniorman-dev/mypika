@@ -862,3 +862,11 @@ class GiftCard(models.Model):
 class LeadershipBoard(models.Model):
     id = models.UUIDField(auto_created=True, primary_key=True, default=uuid.uuid4, editable=False, unique=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_leadership_board')
+    total_trades = models.IntegerField(blank=True, null=True)
+    total_traded_amount = models.IntegerField(blank=True, null=True)
+    currency = models.CharField(max_length=10, default='USD')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.total_trades} ({self.total_traded_amount})"

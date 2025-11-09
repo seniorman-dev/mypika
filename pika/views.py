@@ -12,7 +12,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 from pika.pagination_cofig import SmallResultsSetPagination
-from .models import BankDetail, CartOrder, CryptoWallet, GadgetOrder, GiftCard, Notification, Product, ShipmentOrder, Transaction, Wallet, Message
+from .models import BankDetail, CartOrder, CryptoWallet, GadgetOrder, GiftCard, LeadershipBoard, Notification, Product, ShipmentOrder, Transaction, Wallet, Message
 from .serializers import (
     BankTransferSerializer,
     BuyGiftCardSerializer,
@@ -21,6 +21,7 @@ from .serializers import (
     DepositSerializer,
     EmailSerializer,
     GadgetOrderSerializer,
+    LeadershipBoardSerializer,
     MessageSerializer,
     NotificationSerializer,
     PanicPinSerializer,
@@ -2188,7 +2189,7 @@ class GiftCardPurchaseVerificationWebhook(generics.GenericAPIView):
                 wallet = Wallet.objects.get(user=user)
                 wallet.debit(amount=debit)
                 
-                # ✅ Mark as redeemed
+                # ✅ Mark as redeemed 
                 giftcard.amount = amount
                 giftcard.currency = currency
                 giftcard.country = country
@@ -2237,4 +2238,25 @@ class GiftCardPurchaseVerificationWebhook(generics.GenericAPIView):
                 giftcard.save()
                 return Response({"status": "failed"}, status=status.HTTP_200_OK)
             
+
+
+class LeadershipBoardView(generics.GenericAPIView):
+    """View for fetching leadership board details"""
+    queryset = LeadershipBoard.objects.all().order_by('-created_at')
+    serializer_class = LeadershipBoardSerializer
+
+    # Optionally: Add custom permission (only admin can manage)
+    permission_classes = [permissions.IsAuthenticated]
+    #pagination_class = SmallResultsSetPagination  custom pagination
+    
+    
+    def get(self, request: Request) -> Response:
+        print("Data:", request.data)
+        email = request.data.get('email')
+        otp = request.data.get('otp')
+        new_password = request.data.get('new_password')
+
+        
+
+        return Response({'message': 'Password reset successful. You can now log in with your new password.'}, status=status.HTTP_200_OK)
     
