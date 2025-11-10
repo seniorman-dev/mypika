@@ -2254,7 +2254,7 @@ class GiftCardPurchaseVerificationWebhook(generics.GenericAPIView):
 
 
 class LeadershipBoardView(generics.GenericAPIView):
-    """View for fetching leadership board details"""
+    """View for fetching and updating leadership board details"""
     queryset = LeadershipBoard.objects.all().order_by('-created_at')
     serializer_class = LeadershipBoardSerializer
     permission_classes = [permissions.IsAuthenticated]
