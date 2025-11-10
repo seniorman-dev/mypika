@@ -2100,6 +2100,12 @@ class GiftCardVerificationWebhook(generics.GenericAPIView):
                     content=f"Hi {user.first_name},\n Your giftcard has been redeemed successfully!",
                     type="normal"  #alert, normal, promotion
                 )
+                
+                #UPDATE THE USER LEADERSHIP BOARD
+                leaderboard = LeadershipBoard.objects.filter(user=user).first()
+                leaderboard.total_traded_amount += int(verified_amount)  #(USD)
+                leaderboard.total_trades += 1
+                leaderboard.save()
 
                 # (Optional) Trigger async email confirmation
                 send_email_to_user.delay(user_id=user.id, content='Your giftcard has been redeemed successfully and your wallet credited!')
@@ -2128,8 +2134,9 @@ class GiftCardPurchaseVerificationWebhook(generics.GenericAPIView):
         "amount": 100,
         "country": "US",
         "currency": "USD",
+        "code": "code", #redemption code
         "brand": "amazon",
-        "remarks": "Gift card purchases successfully",
+        "remarks": "Gift card purchased successfully",
         "provider_ref": "ABC123456"
     }
     """
@@ -2223,6 +2230,12 @@ class GiftCardPurchaseVerificationWebhook(generics.GenericAPIView):
                     content=f"Hi {user.first_name}, \nYour {amount} {currency} giftcard has been purchased successfully and your code is {code}. \nKindly check your email for more information.!",
                     type="normal"  #alert, normal, promotion
                 )
+                
+                #UPDATE THE USER LEADERSHIP BOARD
+                leaderboard = LeadershipBoard.objects.filter(user=user).first()
+                leaderboard.total_traded_amount += int(amount)  #(USD)
+                leaderboard.total_trades += 1
+                leaderboard.save()
 
                 # (Optional) Trigger async email confirmation
                 send_email_to_user.delay(user_id=user.id, content=f"You have successfully purchased {amount} {currency} giftcard and your code is {code}.")
@@ -2244,19 +2257,43 @@ class LeadershipBoardView(generics.GenericAPIView):
     """View for fetching leadership board details"""
     queryset = LeadershipBoard.objects.all().order_by('-created_at')
     serializer_class = LeadershipBoardSerializer
-
-    # Optionally: Add custom permission (only admin can manage)
     permission_classes = [permissions.IsAuthenticated]
-    #pagination_class = SmallResultsSetPagination  custom pagination
     
     
-    def get(self, request: Request) -> Response:
-        print("Data:", request.data)
-        email = request.data.get('email')
-        otp = request.data.get('otp')
-        new_password = request.data.get('new_password')
-
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        #get object from db then serializse
+        instance=self.get_object()
+        serializer = self.get_serializer(instance=instance)
         
-
-        return Response({'message': 'Password reset successful. You can now log in with your new password.'}, status=status.HTTP_200_OK)
-    
+        return Response(
+            {
+                "message": "User Leaderboard Retrieved successfully.",
+                "data": serializer.data
+            },
+            status=status.HTTP_200_OK
+        )
+        
+    def put(self, request: Request) -> Response:
+        user = self.request.user
+        data = request.data
+        print(f'data: {data}')
+        amount = data.get("amount", 0) 
+        #UPDATE THE USER LEADERSHIP BOARD
+        leaderboard = LeadershipBoard.objects.filter(user=user).first()
+        if not leaderboard:
+            return Response(
+                {
+                    "message": "User Leaderboard not found.",
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+        leaderboard.total_traded_amount += amount  #(USD)
+        leaderboard.total_trades += 1
+        leaderboard.save()
+        return Response(
+            {
+                "message": "User Leaderboard Updated successfully.",
+                "data": amount
+            },
+            status=status.HTTP_200_OK
+        )
