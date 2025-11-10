@@ -75,7 +75,7 @@ urlpatterns = [
     path('api/giftcards/redeem/webhook/', views.GiftCardVerificationWebhook.as_view(), name='redeem-giftcard-webhook'),
     path('api/giftcards/purchase/webhook/', views.GiftCardPurchaseVerificationWebhook.as_view(), name='purchase-giftcard-webhook'),
     
-    # User Rank/Leaderboard api
+    # User Rank/Leaderboard api (GET and Put request)
     path('api/users/leaderboard/', views.LeadershipBoardView.as_view(), name='leaderboard'),
     
     # Email Sending APIs
