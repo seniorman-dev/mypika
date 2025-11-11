@@ -75,20 +75,19 @@ class UserRegistrationView(generics.GenericAPIView):
         if serializer.is_valid():
             # Save the user from the serializer
             user = serializer.save()
-            #crete default referral count to be zero
+            # Create default referral count to be zero
             user.referral_count = 0
             user.save()
             # Create FIAT swallet for the user
             Wallet.objects.create(user=user, balance=0.00, currency='NGN')
+            # Create LeaderBoard for the user
+            LeadershipBoard.objects.create(user=user, total_traded_amount=0, total_trades=0)
             #  Generate JWT token pair
             refresh = RefreshToken.for_user(user=user)
             
             # referral code is simply the referrer's user_name
             if referral_code is not None:
-                referrer = User.objects.get(user_name=referral_code)
-                
-                '''referrer_wallet = Wallet.objects.get(user=referrer)
-                referrer_wallet.increment_coin()'''
+                referrer = User.objects.filter(user_name=referral_code).first()
                 
                 referrer.increment_referral_count(referral_code=referral_code)
             
